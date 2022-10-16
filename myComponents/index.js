@@ -99,7 +99,7 @@ class MyAudioPlayer extends HTMLElement {
         
         </style>
         <div class="body">
-        
+        <h1>SpotiMiage</h1>
         <div class="visu">
             <canvas id="myCanvas" width=400 height="400"></canvas>
             <audio id="myPlayer" crossorigin="anonymous"></audio>
