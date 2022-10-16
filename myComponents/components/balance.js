@@ -1,3 +1,4 @@
+import '../libs/webaudio-controls.js';
 class balance extends HTMLElement {
     constructor() {
         super();
@@ -7,9 +8,12 @@ class balance extends HTMLElement {
     connectedCallback() {
         this.shadowRoot.innerHTML = `
             <style>
+            .slider{
+                accent-color: white;
+            }
             </style>
             <div id="balance">
-                Gauche <input type="range" value="0" step="0.1" min="-1" max="1" id="balance"></input> Droite
+                Gauche <input class="slider" type="range" value="0" step="0.1" min="-1" max="1" id="balance"></input> Droite
             </div>  
         `;
         this.balance = this.shadowRoot.querySelector('#balance');
@@ -19,7 +23,9 @@ class balance extends HTMLElement {
     initBalance() {
         console.log("initBalance");
         setTimeout(() => {
-            this.defineListenerBalance();
+            if (this.stereoPanner != null) {
+                this.defineListenerBalance();
+            }
         });
     }
 

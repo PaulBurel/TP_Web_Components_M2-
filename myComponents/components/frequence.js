@@ -7,31 +7,34 @@ class frequence extends HTMLElement {
     connectedCallback() {
         this.shadowRoot.innerHTML = `
             <style>
+            .slider{
+                accent-color: white;
+            }
             </style>
             <div id="frequence">
-                <div class="btn">
+                <div>
                     <label>60Hz</label>
-                    <input type="range" value="0" step="1" min="-30" max="30" id="f1"></input>
+                    <input class="slider" type="range" value="0" step="1" min="-30" max="30" id="f1"></input>
                 </div>
-                <div class="btn">
+                <div>
                     <label>170Hz</label>
-                    <input type="range" value="0" step="1" min="-30" max="30" id="f2"></input>
+                    <input class="slider" type="range" value="0" step="1" min="-30" max="30" id="f2"></input>
                 </div>
-                <div class="btn">
+                <div>
                     <label>350Hz</label>
-                    <input type="range" value="0" step="1" min="-30" max="30" id="f3"></input>
+                    <input class="slider" type="range" value="0" step="1" min="-30" max="30" id="f3"></input>
                 </div>
-                <div class="btn">
+                <div>
                     <label>1000Hz</label>
-                    <input type="range" value="0" step="1" min="-30" max="30" id="f4"></input>
+                    <input class="slider"type="range" value="0" step="1" min="-30" max="30" id="f4"></input>
                 </div>
-                <div class="btn">
+                <div>
                     <label>3500Hz</label>
-                    <input type="range" value="0" step="1" min="-30" max="30" id="f5"></input>
+                    <input class="slider" type="range" value="0" step="1" min="-30" max="30" id="f5"></input>
                 </div>
-                <div class="btn">
+                <div>
                     <label>10000Hz</label>
-                    <input type="range" value="0" step="1" min="-30" max="30" id="f6"></input>
+                    <input class="slider" type="range" value="0" step="1" min="-30" max="30" id="f6"></input>
                 </div>
             </div>
         `;

@@ -8,44 +8,6 @@ const getBaseURL = () => {
     return new URL('.', import.meta.url);
 };
 
-const template = document.createElement("template");
-template.innerHTML = /*html*/`
-    <style>
-    canvas {
-        border:1px solid black;
-    }
-    </style>
-    <canvas id="myCanvas" width=400></canvas>
-    <audio id="myPlayer" crossorigin="anonymous"></audio>        
-    <br>
-
-    <webaudio-knob id="volumeKnob" 
-      src="./assets/imgs/LittlePhatty.png" 
-      value=5 min=0 max=20 step=0.01 
-      diameter="32" 
-      tooltip="Volume: %d">
-    </webaudio-knob>
-    <br>
-    Progression : <input id="progress" type="range" value=0>
-    </br>
-    <button id="play">Play</button> 
-    <button id="pause">Pause</button>
-    <button id="avance10">+10s</button>
-    <button id="recule10">-10s</button>
-    <button id="stop">Stop</button>
-    <button id="next">Next</button>
-    <button id="previous">Previous</button>
-    <br>
-    <label>Vitesse de lecture
-        0 <input id="vitesseLecture" type="range" min=0.2 max=4 step=0.1 value=1> 4
-    </label>
-    <my-balance id="balance"></my-balance>
-    <br>
-    <my-frequence id="frequence"></my-frequence>
-    
-    
-`;
-
 class MyAudioPlayer extends HTMLElement {
     constructor() {
         super();
@@ -81,20 +43,115 @@ class MyAudioPlayer extends HTMLElement {
     }
 
     connectedCallback() {
-        // Appelée automatiquement par le browser
-        // quand il insère le web component dans le DOM
-        // de la page du parent..
+        this.shadowRoot.innerHTML = `
+        <style>
+        .body {
+            margin: 0 auto;
+            padding: 1em;
+            background: rgba(0, 0, 0,0.7);
+            box-shadow: 0 0 50px black;
+            text-align: center;
+            width: 450px;
+            height: auto;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Helvetica', sans-serif;
+        }
+        canvas {
+            border:1px solid black;
+            width: 90%;
+        }
+        .visu{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bar{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 22%;
+            height: 10%;
+            background-color: #282828;
+            border-radius: 12px;
+            width: 800px;
+        }
+        .b{
+            border-radius: 12px;
+            background-color: #04AA6D;
+            border: none;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+        }
+        .sliderProg{
+            width : 30%;
+            accent-color: white;
+        }
+        .slider{
+            accent-color: white;
+        }
+        
+        
+        </style>
+        <div class="body">
+        
+        <div class="visu">
+            <canvas id="myCanvas" width=400 height="400"></canvas>
+            <audio id="myPlayer" crossorigin="anonymous"></audio>
+        </div> 
+        
+        </br>
 
-        // On clone le template HTML/CSS (la gui du wc)
-        // et on l'ajoute dans le shadow DOM
-        this.shadowRoot.appendChild(template.content.cloneNode(true));
+        <h1 id="titre">${this.currentSoundObject.author} - ${this.currentSoundObject.title}</h1>
+        
+        <span id="currentTime">00:00</span>
+        <input class="sliderProg" id="progress" type="range" value=0>
+        <span id="durée">--:--</span>
+        
+        <br>
+        
+        <button class="b" id="play">Play</button>
+        <button class="b" id="pause">||</button>
+        <button class="b" id="stop">Stop</button>
+        <button class="b" id="previous"><<</button>    
+        <button class="b" id="next">>></button>
+        <button class="b" id="avance10">+10s</button>
+        <button class="b" id="recule10">-10s</button>
+        
+        <br>
+        
+        <webaudio-knob id="vitesseLectureKnob" 
+            src="./assets/imgs/silver.png" 
+            value=1 min=0.2 max=4 step=0.01 
+            diameter="50" 
+            tooltip="Vitesse de lecture : %d">
+        </webaudio-knob>
+        <webaudio-knob id="volumeKnob" 
+            src="./assets/imgs/silver.png" 
+            value=5 min=0 max=20 step=0.01 
+            diameter="50" 
+            tooltip="Volume: %d">
+        </webaudio-knob>
 
-        // fix relative URLs
+        <my-balance id="balance"></my-balance>
+        <br>
+        
+        <my-frequence id="frequence"></my-frequence>
+        
+        </div>
+        `;
         this.fixRelativeURLs();
 
         this.player = this.shadowRoot.querySelector("#myPlayer");
+
         this.player.src = this.getAttribute("src");
         this.player.src = this.currentSoundObject.url;
+        this.updateTitre();
 
         this.balance = this.shadowRoot.querySelector("#balance");
         console.log(this.balance);
@@ -102,28 +159,19 @@ class MyAudioPlayer extends HTMLElement {
         this.frequence = this.shadowRoot.querySelector("#frequence");
         console.log(this.frequence);
 
-        // récupérer le canvas
         this.canvas = this.shadowRoot.querySelector("#myCanvas");
         this.ctx = this.canvas.getContext("2d");
 
-        // Récupération du contexte WebAudio
         this.audioCtx = new AudioContext();
         this.sourceNode = this.audioCtx.createMediaElementSource(this.player);
         this.filters = [];
         this.analyser;
 
-
-
-        // On construit un graphe webaudio pour capturer
-        // le son du lecteur et pouvoir le traiter
-        // en insérant des "noeuds" webaudio dans le graphe
         this.buildAudioGraph();
         this.initAudio();
 
-        // on définit les écouteurs etc.
         this.defineListeners();
 
-        // on démarre l'animation
         requestAnimationFrame(() => {
             this.animationLoop();
         });
@@ -131,10 +179,10 @@ class MyAudioPlayer extends HTMLElement {
 
     buildAudioGraph() {
         this.analyser = this.audioCtx.createAnalyser();
-        this.analyser.fftSize = 1024;
+        this.analyser.fftSize = 512;
         this.bufferLength = this.analyser.frequencyBinCount;
         this.dataArray = new Uint8Array(this.bufferLength);
-        // Set filters
+        
         [60, 170, 350, 1000, 3500, 10000].forEach((freq, i) => {
             var eq = this.audioCtx.createBiquadFilter();
             eq.frequency.value = freq;
@@ -142,64 +190,40 @@ class MyAudioPlayer extends HTMLElement {
             eq.gain.value = 0;
             this.filters.push(eq);
         });
-        // Connect filters in serie
+        
         this.sourceNode.connect(this.filters[0]);
         for (var i = 0; i < this.filters.length - 1; i++) {
             this.filters[i].connect(this.filters[i + 1]);
         }
-        // connect the last filter to the speakers
         this.filters[this.filters.length - 1].connect(this.analyser);
 
         this.masterGain = this.audioCtx.createGain();
         this.masterGain.value = 1;
         this.filters[this.filters.length - 1].connect(this.masterGain);
+
         this.stereoPanner = this.audioCtx.createStereoPanner();
         this.masterGain.connect(this.stereoPanner);
         this.stereoPanner.connect(this.analyser);
 
         this.analyser.connect(this.audioCtx.destination);
-
     }
-
-    initAudio(){
-        console.log("initAudio");
-        console.log(this.filters);
-        this.balance.stereoPanner = this.stereoPanner;
-        this.frequence.filters = this.filters;
-    }
-
 
     animationLoop() {
-        // 1 on efface le canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 2 on dessine les objets
-        //this.ctx.fillRect(10+Math.random()*20, 10, 100, 100);
-
-        // Get the analyser data
         this.analyser.getByteFrequencyData(this.dataArray);
-
         let barWidth = this.canvas.width / this.bufferLength;
         let barHeight;
         let x = 0;
-
-        // values go from 0 to 256 and the canvas heigt is 100. Let's rescale
-        // before drawing. This is the scale factor
         let heightScale = this.canvas.height / 128;
-
         for (let i = 0; i < this.bufferLength; i++) {
             barHeight = this.dataArray[i];
-
-            this.ctx.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
+            this.ctx.fillStyle = 'rgb(' + (barHeight + 255) + ',255,255)';
             barHeight *= heightScale;
             this.ctx.fillRect(x, this.canvas.height - barHeight / 2, barWidth, barHeight / 2);
-
-            // 2 is the number of pixels between bars
             x += barWidth + 1;
         }
-        // 3 on deplace les objets
-
-        // 4 On demande au navigateur de recommencer l'animation
+        
         requestAnimationFrame(() => {
             this.animationLoop();
         });
@@ -238,6 +262,8 @@ class MyAudioPlayer extends HTMLElement {
             } else {
                 this.currentSoundObject = this.playList[this.currentSoundObject.index + 1];
             }
+            this.updateTitre();
+            this.updateDurée();
             this.player.src = this.currentSoundObject.url;
             this.player.play();
         }
@@ -250,6 +276,7 @@ class MyAudioPlayer extends HTMLElement {
             } else {
                 this.currentSoundObject = this.playList[this.currentSoundObject.index - 1];
             }
+            this.updateTitre();
             this.player.src = this.currentSoundObject.url;
             this.player.play();
         }
@@ -267,11 +294,6 @@ class MyAudioPlayer extends HTMLElement {
             this.player.currentTime = 0;
         }
 
-        this.shadowRoot.querySelector("#vitesseLecture").oninput = (event) => {
-            this.player.playbackRate = parseFloat(event.target.value);
-            console.log("vitesse =  " + this.player.playbackRate);
-        }
-
         this.shadowRoot.querySelector("#progress").onchange = (event) => {
             this.player.currentTime = parseFloat(event.target.value);
         }
@@ -280,16 +302,55 @@ class MyAudioPlayer extends HTMLElement {
             this.player.volume = evt.target.value;
         });
 
+        this.shadowRoot.querySelector('#vitesseLectureKnob').oninput = (event) => {
+            this.player.playbackRate = parseFloat(event.target.value);
+            console.log("vitesse =  " + this.player.playbackRate);
+        }
+
+        this.shadowRoot.querySelector('#progress').addEventListener('input', (evt) => {
+            this.player.currentTime = evt.target.value;
+        });
+
         this.player.ontimeupdate = (event) => {
             let progressSlider = this.shadowRoot.querySelector("#progress");
             progressSlider.max = this.player.duration;
             progressSlider.min = 0;
             progressSlider.value = this.player.currentTime;
+
+            let seconds = this.player.currentTime;
+            this.shadowRoot.querySelector('#progress').value = seconds;
+            let minutes = Math.floor(seconds / 60);
+            minutes = (minutes >= 10) ? minutes : "0" + minutes;
+            seconds = Math.floor(seconds % 60);
+            seconds = (seconds >= 10) ? seconds : "0" + seconds;
+            this.shadowRoot.querySelector('#currentTime').innerHTML = minutes + ":" + seconds;
+        }
+
+        this.player.onloadedmetadata = () => {
+            this.updateDurée();
         }
     }
 
-    // L'API du Web Component
+    updateDurée() {
+        let seconds = this.player.duration;
+        this.shadowRoot.querySelector('#progress').max = seconds;
+        let minutes = Math.floor(seconds / 60);
+        minutes = (minutes >= 10) ? minutes : "0" + minutes;
+        seconds = Math.floor(seconds % 60);
+        seconds = (seconds >= 10) ? seconds : "0" + seconds;
+        this.shadowRoot.querySelector('#durée').innerHTML = minutes + ":" + seconds;
+    }
 
+    updateTitre() {
+        this.shadowRoot.querySelector('#titre').innerHTML = `${this.currentSoundObject.author} - ${this.currentSoundObject.title}`;
+    }
+
+    initAudio() {
+        console.log("initAudio");
+        console.log(this.filters);
+        this.balance.stereoPanner = this.stereoPanner;
+        this.frequence.filters = this.filters;
+    }
 }
 
 customElements.define("my-player", MyAudioPlayer);
